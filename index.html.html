@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplyFit | Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .brand { text-align: center; margin-bottom: 28px; }
+        .brand h1 { font-size: 28px; font-weight: 700; color: #fff; }
+        .brand h1 span { color: var(--primary); }
+        .brand p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+        }
+        input:focus { outline: none; border-color: var(--primary); }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background: var(--primary-hover); }
+
+        .result-card {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .user-name { font-size: 18px; font-weight: 600; }
+        
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .badge-active { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+        .badge-expired { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+        .detail-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; color: var(--text-muted); }
+        .detail-row span { color: var(--text-light); font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="brand">
+            <h1>Simply<span>Fit</span></h1>
+            <p>Member & Coach Access Check</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="Enter your email address" required>
+            </div>
+            <button type="submit" id="submitBtn">Verify Membership</button>
+        </form>
+
+        <div id="resultCard" class="result-card">
+            <div class="result-header">
+                <div class="user-name" id="resName">--</div>
+                <div class="badge" id="resBadge">--</div>
+            </div>
+            <div class="detail-row">Role: <span id="resRole">--</span></div>
+            <div class="detail-row">Plan: <span id="resPlan">--</span></div>
+            <div class="detail-row">Expiry Date: <span id="resExpiry">--</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Replace with your Google Apps Script Web App URL
+        const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const btn = document.getElementById('submitBtn');
+            const resultCard = document.getElementById('resultCard');
+
+            btn.innerText = "Checking...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?email=${encodeURIComponent(email)}`);
+                const data = await response.json();
+
+                btn.innerText = "Verify Membership";
+                btn.disabled = false;
+                resultCard.style.display = "block";
+
+                if (data.status === "found") {
+                    document.getElementById('resName').innerText = data.fullName;
+                    document.getElementById('resRole').innerText = data.role;
+                    document.getElementById('resPlan').innerText = data.plan;
+                    document.getElementById('resExpiry').innerText = data.expiryDate;
+
+                    const badge = document.getElementById('resBadge');
+                    badge.innerText = data.membershipStatus;
+                    
+                    if (data.membershipStatus.includes("Active")) {
+                        badge.className = "badge badge-active";
+                    } else {
+                        badge.className = "badge badge-expired";
+                    }
+                } else {
+                    document.getElementById('resName').innerText = "Record Not Found";
+                    document.getElementById('resBadge').innerText = "No Record";
+                    document.getElementById('resBadge').className = "badge badge-expired";
+                    document.getElementById('resRole').innerText = "N/A";
+                    document.getElementById('resPlan').innerText = "N/A";
+                    document.getElementById('resExpiry').innerText = "N/A";
+                }
+            } catch (error) {
+                btn.innerText = "Verify Membership";
+                btn.disabled = false;
+                alert("Could not retrieve membership status. Ensure your Apps Script URL is linked correctly.");
+            }
+        });
+    </script>
+</body>
+</html>
